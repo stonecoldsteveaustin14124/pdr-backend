@@ -1,103 +1,71 @@
-# pdr-backend
+# Resizing images uploaded to Amazon S3 with AWS Lambda (Python)
 
-## Run bots (agents)
+The AWS SAM template deploys an AWS Lambda function, an Amazon S3 bucket, and the IAM resources required to run the application. A Lambda function consumes <code>ObjectCreated</code> events from an Amazon S3 bucket. The Lambda code checks if the uploaded file is an image and then creates a thumbnail version of the image in the same bucket.
 
-- **[Run predictoor bot](READMEs/predictoor.md)** - make predictions, make $
-- **[Run trader bot](READMEs/trader.md)** - consume predictions, trade, make $
+Important: this application uses various AWS services and there are costs associated with these services after the Free Tier usage - please see the [AWS Pricing page](https://aws.amazon.com/pricing/) for details. You are responsible for any AWS costs incurred. No warranty is implied in this example.
 
-(If you're a predictoor or trader, you can safely ignore the rest of this README.)
+## Requirements
 
-## Settings: PPSS
+* [Create an AWS account](https://portal.aws.amazon.com/gp/aws/developer/registration/index.html) if you do not already have one and log in. The IAM user that you use must have sufficient permissions to make necessary AWS service calls and manage AWS resources.
+* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) installed and configured
+* [Git Installed](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+* [AWS Serverless Application Model](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html) (AWS SAM) installed
 
-A "ppss" yaml file, like [`ppss.yaml`](ppss.yaml), holds parameters for all bots and simulation flows.
+## Deployment Instructions
 
-- We follow the idiom "pp" = problem setup (what to solve), "ss" = solution strategy (how to solve).
-- `PRIVATE_KEY` is an exception; it's set as an envvar.
+1. Create a new directory, navigate to that directory in a terminal and clone the GitHub repository:
+    ``` 
+    git clone https://github.com/aws-samples/serverless-patterns
+    ```
+1. Change directory to the pattern directory:
+    ```
+    cd s3-lambda-resizing-python
+    ```
+1. From the command line, use AWS SAM to build and deploy the AWS resources for the pattern as specified in the template.yml file:
+    ```
+    sam build
+    sam deploy --guided
+    ```
+1. During the prompts:
+    * Enter a stack name
+    * Enter the desired AWS Region
+    * Enter names for your source and destination S3 buckets. Make sure these are unique as S3 bucket names share a global namespace.
+    * Allow SAM CLI to create IAM roles with the required permissions.
 
-When you run a bot from the CLI, you specify your PPSS YAML file.
+    Once you have run `sam deploy --guided` mode once and saved arguments to a configuration file (samconfig.toml), you can use `sam deploy` in future to use these defaults.
 
-pdr has basic stdout logging, but supports customisations.
-To customise logging, copy and edit the existing `logging.yaml`:
+1. Note the outputs from the SAM deployment process. These contain the resource names and/or ARNs which are used for testing.
 
-```console
-cp logging.yaml my_logging.yaml
+## How it works
+
+* Use the AWS CLI upload an image to S3
+* If the object is a .jpeg or a .png, the code creates a thumbnail and saves it to the target bucket. 
+* The code assumes that the destination bucket exists.
+
+==============================================
+
+## Testing
+
+Run the following S3 CLI command to upload an image to the S3 bucket. Note, you must edit the {SourceBucketName} placeholder with the name of the S3 Bucket. This is provided in the stack outputs.
+
+```bash
+aws s3 cp './events/white_dog.jpeg' s3://{SourceBucketName}
 ```
 
-## CLI
+Run the following command to check that a new version of the image has been created in the destination bucket.
 
-(First, [install pdr-backend](READMEs/predictoor.md#install-pdr-backend-repo) first.)
-
-To see CLI options, in console:
-
-```console
-pdr
+```bash
+aws s3 ls s3://{DestinationBucketName}
 ```
 
-This will output something like:
-
-```text
-Usage: pdr sim|predictoor|trader|..
-
-Main tools:
-  pdr sim YAML_FILE
-  pdr predictoor YAML_FILE NETWORK
-  pdr trader APPROACH YAML_FILE NETWORK
-...
-```
-
-## Atomic READMEs
-
-- [Get tokens](READMEs/get-tokens.md): [testnet faucet](READMEs/testnet-faucet.md), [mainnet ROSE](READMEs/get-rose-on-sapphire.md) & [OCEAN](READMEs/get-ocean-on-sapphire.md)
-- [Claim payout for predictoor bot](READMEs/payout.md)
-- [Predictoor subgraph](READMEs/subgraph.md). [Subgraph filters](READMEs/filters.md)
-- [Run barge locally](READMEs/barge.md)
-
-## Flows for core team
-
-- Backend-dev - for `pdr-backend` itself
-  - [Local dev flow](READMEs/dev.md)
-  - [VPS dev flow](READMEs/vps.md)
-  - [Release process](READMEs/release-process.md)
-  - [Clean code guidelines](READMEs/clean-code.md)
-  - [Dependency management](READMEs/dependencies.md)
-- [Run dfbuyer bot](READMEs/dfbuyer.md) - runs Predictoor DF rewards
-- [Run publisher](READMEs/publisher.md) - publish new feeds
-- [Run trueval](READMEs/trueval.md) - run trueval bot
-- [Run lake](READMEs/lake-and-etl.md) - run data lake
-
-## Repo structure
-
-This repo implements all bots in Predictoor ecosystem. Here are each of the sub-directories in the repo.
-
-Main bots & user tools:
-
-- `predictoor` - submit individual predictions
-- `trader` - buy aggregated predictions, then trade
-- `sim` - experiments / simulation flow
-- `payout` - OCEAN & ROSE payout
-
-OPF-run bots & higher-level tools:
-
-- `trueval` - report true values to contract
-- `dfbuyer` - buy feeds on behalf of Predictoor DF
-- `publisher` - publish pdr data feeds
-- `deployer` - deployer tool
-
-Mid-level building blocks:
-
-- `cli` - implementation of CLI
-- `ppss` - implements settings
-
-Data-level building blocks:
-
-- `ohlcv` - financial data pipeline
-- `aimodel` - AI/ML modeling engine
-- `lake` - data lake and analytics tools
-- `subgraph` - blockchain queries, complements lake
-- `accuracy` - to report % correct in webapp
-- `pred_submitter` - for predictoor bots to submit >>1 predictions in 1 tx
-
-Lower-level utilities:
-
-- `contract` - classes to wrap blockchain contracts; some simple data structures
-- `util` - function-based tools
+## Cleanup
+ 
+1. Delete the stack
+    ```bash
+    sam delete --stack-name STACK_NAME
+    ```
+1. Confirm the stack has been deleted
+    ```bash
+    aws cloudformation list-stacks --query "StackSummaries[?contains(StackName,'STACK_NAME')].StackStatus"
+    ```
+----

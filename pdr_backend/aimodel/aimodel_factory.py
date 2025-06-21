@@ -24,7 +24,7 @@ from sklearn.svm import LinearSVC
 from xgboost import XGBClassifier, XGBRegressor
 
 from pdr_backend.aimodel.aimodel import Aimodel
-from pdr_backend.ppss.aimodel_ss import AimodelSS
+from pdr_backend.ppss.aimodel_ss impimport AimodelSS
 
 logger = logging.getLogger("aimodel_factory")
 
@@ -263,57 +263,17 @@ def _approach_to_skm(approach: str, seed: Optional[int]):
         return ElasticNet(random_state=seed)
     if approach == "RegrGaussianProcess":
         return GaussianProcessRegressor(random_state=seed)
-    if approach == "RegrXgboost":
+    if approach == "RegrXGB":
         return XGBRegressor(random_state=seed)
 
     # classifier approaches
-    if approach == "ClassifLinearLasso":
-        return LogisticRegression(
-            penalty="l1", solver="liblinear", max_iter=1000, random_state=seed
-        )
-    if approach == "ClassifLinearLasso_Balanced":
-        return LogisticRegression(
-            penalty="l1",
-            solver="liblinear",
-            max_iter=1000,
-            class_weight="balanced",
-            random_state=seed,
-        )
-    if approach == "ClassifLinearRidge":
-        return LogisticRegression(
-            penalty="l2", solver="lbfgs", max_iter=1000, random_state=seed
-        )
-    if approach == "ClassifLinearRidge_Balanced":
-        return LogisticRegression(
-            penalty="l2",
-            solver="lbfgs",
-            max_iter=1000,
-            class_weight="balanced",
-            random_state=seed,
-        )
-    if approach == "ClassifLinearElasticNet":
-        return LogisticRegression(
-            penalty="elasticnet",
-            l1_ratio=0.5,
-            solver="saga",
-            max_iter=1000,
-            random_state=seed,
-        )
-    if approach == "ClassifLinearElasticNet_Balanced":
-        return LogisticRegression(
-            penalty="elasticnet",
-            l1_ratio=0.5,
-            solver="saga",
-            max_iter=1000,
-            class_weight="balanced",
-            random_state=seed,
-        )
-    if approach == "ClassifLinearSVM":
-        return LinearSVC(C=0.025, random_state=seed)
+    if approach == "ClassifLogistic":
+        return LogisticRegression(random_state=seed, max_iter=1000)
+    if approach == "ClassifLinearSVC":
+        return LinearSVC(random_state=seed, max_iter=1000)
     if approach == "ClassifGaussianProcess":
         return GaussianProcessClassifier(random_state=seed)
-    if approach == "ClassifXgboost":
+    if approach == "ClassifXGB":
         return XGBClassifier(random_state=seed)
 
-    # unidentified
-    return None
+    raise ValueError(f"Unknown approach: {approach}")
