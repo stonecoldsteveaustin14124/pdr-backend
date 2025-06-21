@@ -41,12 +41,6 @@
             "stopAtEntry": false,
             "externalConsole": false,
             "justMyCode": false
-        },
-        {
-            "type": "node",
-            "request": "attach",
-            "name": "Containers: Attach to Node",
-            "remoteRoot": "/usr/src/app"
         }
     ]
 }
